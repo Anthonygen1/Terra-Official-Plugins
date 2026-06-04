@@ -1,0 +1,111 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: "{{ .Release.Name }}"
+  labels:
+    kuiper.juno-innovations.com/kuiper-instance: "{{ .Values.name }}"
+  annotations:
+    juno-innovations.com/workload: "Terminal"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      kuiper.juno-innovations.com/kuiper-instance: "{{ .Release.Name }}"
+  template:
+    metadata:
+      labels:
+        kuiper.juno-innovations.com/kuiper-instance: "{{ .Release.Name }}"
+    spec:
+      {{- if .Values.terra_role }}
+      serviceAccountName: {{ .Values.terra_role }}
+      {{- end }}
+      nodeSelector:
+        juno-innovations.com/workstation: "true"
+      tolerations:
+        - key: juno-innovations.com/workstation
+          operator: Equal
+          value: "true"
+          effect: NoSchedule
+      containers:
+        - name: ttyd
+          imagePullPolicy: IfNotPresent
+          image: "{{ .Values.registry }}/{{ .Values.repo }}:{{ .Values.tag }}"
+          command:
+            - ttyd
+          args:
+            - --port
+            - "{{ .Values.ttyd_port }}"
+            - --base-path
+            - "/ttyd/{{ .Values.name }}"
+            {{- if .Values.writable }}
+            - --writable
+            {{- end }}
+            - "{{ .Values.shell_command }}"
+          resources:
+            requests:
+              memory: "{{ .Values.memory }}"
+              cpu: "{{ .Values.cpu }}"
+            {{- if .Values.memoryLimit }}
+            limits:
+              memory: "{{ .Values.memoryLimit }}"
+              {{- if .Values.cpuLimit }}
+              cpu: "{{ .Values.cpuLimit }}"
+              {{- end }}
+            {{- else if .Values.cpuLimit }}
+            limits:
+              cpu: "{{ .Values.cpuLimit }}"
+            {{- end }}
+          ports:
+            - containerPort: {{ .Values.ttyd_port }}
+              name: ttyd
+          env:
+            - name: PUID
+              value: "{{ .Values.puid }}"
+            - name: PGID
+              value: "{{ .Values.guid }}"
+            - name: USER
+              value: "{{ .Values.user }}"
+            - name: HOME
+              value: "/home/{{ .Values.user }}"
+            {{- range .Values.env }}
+            - name: {{ .name | quote }}
+              value: {{ .value | quote }}
+            {{- end }}
+          startupProbe:
+            tcpSocket:
+              port: {{ .Values.ttyd_port }}
+            failureThreshold: 150
+            periodSeconds: 2
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.ttyd_port }}
+            failureThreshold: 24
+            periodSeconds: 5
+          {{- if .Values.volumeMounts }}
+          volumeMounts:
+            {{- toYaml .Values.volumeMounts | nindent 12 }}
+          {{- end }}
+        - name: nginx
+          imagePullPolicy: IfNotPresent
+          image: "{{ .Values.nginx_registry }}/{{ .Values.nginx_repo }}:{{ .Values.nginx_tag }}"
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"
+          ports:
+            - containerPort: 8080
+              name: proxy
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: "{{ .Release.Name }}-nginx"
+        {{- if .Values.volumes }}
+        {{- toYaml .Values.volumes | nindent 8 }}
+        {{- end }}

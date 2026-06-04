@@ -1,0 +1,11 @@
+resource_id: ttyd
+name: TTYD Terminal
+icon: https://raw.githubusercontent.com/juno-fx/Terra-Official-Plugins/refs/heads/main/plugins/ttyd/scripts/assets/logo.png
+description: Web-based terminal emulator. Run a shell command and access it directly in the browser via the official tsl0922/ttyd image.
+category: Development
+compatibility: genesis-deployment>=3.0.0-beta.1, orion-deployment>=3.0.0-beta.1
+tags:
+  - cluster-level
+  - development
+  - workload
+fields: []

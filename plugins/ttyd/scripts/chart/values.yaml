@@ -1,0 +1,32 @@
+name: ttyd
+user:
+registry: tsl0922
+repo: ttyd
+tag: latest
+shell_command: bash
+ttyd_port: 7681
+writable: true
+publicAccess: false
+group:
+cpu: "500m"
+memory: "512Mi"
+cpuLimit: null
+memoryLimit: null
+idx: 0
+guid: 0
+puid: 0
+host:
+pullSecret:
+session:
+volumeMounts: []
+volumes: []
+env:
+  - name: JUNO
+    value: "true"
+selector:
+plugins: []
+_kuiper:
+terra_role:
+nginx_registry: "docker.io"
+nginx_repo: "nginx"
+nginx_tag: "alpine"
