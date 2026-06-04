@@ -6,10 +6,13 @@ metadata:
     kuiper.juno-innovations.com/chart: "{{ .Release.Name }}-scripts-configmap"
 data:
   nginx.conf: |
-    events {}
+    events {
+        worker_connections 1024;
+    }
     http {
         server {
             listen 9119;
+            tcp_nodelay on;
 
             location = /hermes/__NAME__/dashboard {
                 rewrite ^ /hermes/__NAME__/dashboard/ last;
@@ -30,8 +33,11 @@ data:
                 proxy_http_version 1.1;
                 proxy_set_header Upgrade $http_upgrade;
                 proxy_set_header Connection "upgrade";
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
                 proxy_buffering off;
                 proxy_cache off;
+                proxy_read_timeout 43200s;
             }
         }
     }
