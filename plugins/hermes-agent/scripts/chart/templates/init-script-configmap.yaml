@@ -54,8 +54,8 @@ data:
     DASHBOARD_PID=$!
 
     echo "[init] Starting ttyd..."
-    ttyd --port 7681 --base-path /hermes/__NAME__ -t fontSize=20 --writable \
-      sh -c '. /opt/hermes/.venv/bin/activate && echo && echo "Run hermes to start Hermes" && echo && exec sh -i' 2>&1 | sed 's/^/[ttyd] /' &
+    ttyd --port 7681 --base-path /hermes/__NAME__ --no-check-origin -t fontSize=20 --writable \
+      bash -c '. /opt/hermes/.venv/bin/activate && echo && echo "Run hermes to start Hermes" && echo && exec bash -i' 2>&1 | sed 's/^/[ttyd] /' &
     TTYD_PID=$!
 
     wait
