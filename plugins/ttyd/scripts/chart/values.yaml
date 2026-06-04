@@ -5,6 +5,7 @@ repo: ttyd
 tag: latest
 shell_command: bash
 ttyd_port: 7681
+font_size: 16
 writable: true
 publicAccess: false
 group:

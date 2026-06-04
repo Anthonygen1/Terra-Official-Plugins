@@ -40,6 +40,8 @@ spec:
             {{- if .Values.writable }}
             - --writable
             {{- end }}
+            - -t
+            - "fontSize={{ .Values.font_size }}"
             - "{{ .Values.shell_command }}"
           resources:
             requests:

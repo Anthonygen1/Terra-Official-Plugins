@@ -50,6 +50,11 @@ data:
       type: string
       required: true
       default: "7681"
+    - name: font_size
+      description: "Terminal font size in pixels"
+      type: integer
+      required: true
+      default: 16
     - name: writable
       description: "Allow input to the terminal (set to false for read-only view)"
       type: boolean
