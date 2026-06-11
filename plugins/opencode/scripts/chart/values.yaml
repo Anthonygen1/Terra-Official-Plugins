@@ -5,7 +5,7 @@ repo: nginx
 tag: alpine
 ttyd_port: 7681
 group:
-cpu: "2"
+cpu: "3"
 memory: "1Gi"
 cpuLimit: null
 memoryLimit: null
