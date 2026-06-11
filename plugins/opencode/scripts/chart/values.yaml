@@ -6,7 +6,7 @@ tag: alpine
 ttyd_port: 7681
 group:
 cpu: "34"
-memory: "1Gi"
+memory: "14Gi"
 cpuLimit: null
 memoryLimit: null
 idx: 0
