@@ -8,7 +8,7 @@ metadata:
     juno-innovations.com/workload: "Terminal"
 data:
   chart: "{{ .Release.Name }}-scripts-configmap"
-  description: "TTYD web-based terminal emulator"
+  description: "TTYD web-based terminal emulator ahhh"
   fields: |
     - name: registry
       description: "Registry to pull the ttyd image from"
@@ -64,8 +64,3 @@ data:
       description: Name of a Terra role to assign to the TTYD workload. This refers to plugin-level installed roles.
       required: false
       type: k8sServiceAccount
-    - name: publicAccess
-      description: "Allow public access (disable authentication)"
-      type: boolean
-      required: true
-      default: false
