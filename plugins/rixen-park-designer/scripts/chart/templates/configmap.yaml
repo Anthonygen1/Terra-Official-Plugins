@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ .Release.Name }}-app"
+  labels:
+    kuiper.juno-innovations.com/kuiper-instance: "{{ .Values.name }}"
+    kuiper.juno-innovations.com/chart: "{{ .Release.Name }}-scripts-configmap"
+binaryData:
+  rixen.html: {{ .Files.Get "files/rixen.html" | b64enc }}
+data:
+  server.py: |
+{{ .Files.Get "files/server.py" | indent 4 }}

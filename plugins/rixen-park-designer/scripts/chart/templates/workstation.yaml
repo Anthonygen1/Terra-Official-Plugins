@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: "{{ .Values.name }}"
+  annotations:
+    kuiper.juno-innovations.com/actions: "stop"
+    juno-innovations.com/workload: "Application"
+  labels:
+    juno-innovations.com/workstation: "{{ .Values.name }}"
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      juno-innovations.com/workstation: "{{ .Values.name }}"
+  template:
+    metadata:
+      labels:
+        juno-innovations.com/workstation: "{{ .Values.name }}"
+        kuiper.juno-innovations.com/kuiper-instance: "{{ .Values.name }}"
+      annotations:
+        juno-innovations.com/workload: "Application"
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        fsGroup: {{ .Values.guid }}
+      hostname: "{{ .Values.name }}"
+
+      {{- if .Values.pullSecret }}
+      imagePullSecrets:
+        - name: "{{ .Values.pullSecret }}"
+      {{- end }}
+
+      containers:
+        - name: rixen-park-designer
+          image: "{{ .Values.registry }}/{{ .Values.repo }}:{{ .Values.tag }}"
+          imagePullPolicy: IfNotPresent
+          command: ["python", "/app/server.py"]
+          resources:
+            requests:
+              memory: "{{ .Values.memory }}"
+              cpu: "{{ .Values.cpu }}"
+            {{- if or .Values.memoryLimit .Values.cpuLimit }}
+            limits:
+              {{- if .Values.cpuLimit }}
+              cpu: "{{ .Values.cpuLimit }}"
+              {{- end }}
+              {{- if .Values.memoryLimit }}
+              memory: "{{ .Values.memoryLimit }}"
+              {{- end }}
+            {{- end }}
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: JUNO
+              value: "true"
+            - name: PORT
+              value: "8080"
+            - name: DATA_PATH
+              value: "/data/layout.json"
+            - name: PAGE_PATH
+              value: "/app/rixen.html"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: {{ .Values.puid }}
+          volumeMounts:
+            - name: app
+              mountPath: /app
+              readOnly: true
+            - name: layout-data
+              mountPath: /data
+            {{- if .Values.volumeMounts }}
+            {{- toYaml .Values.volumeMounts | nindent 12 }}
+            {{- end }}
+
+      volumes:
+        - name: app
+          configMap:
+            name: "{{ .Release.Name }}-app"
+        - name: layout-data
+          {{- if .Values.dataPersistent }}
+          persistentVolumeClaim:
+            claimName: "{{ .Values.name }}-data"
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        {{- if .Values.volumes }}
+        {{- toYaml .Values.volumes | nindent 8 }}
+        {{- end }}

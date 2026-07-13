@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ .Release.Name }}-terra-metadata"
+  labels:
+    kuiper.juno-innovations.com/chart: "{{ .Release.Name }}-scripts-configmap"
+  annotations:
+    juno-innovations.com/workload: "Application"
+data:
+  chart: "{{ .Release.Name }}-scripts-configmap"
+  description: "3D obstacle layout designer for the Ski Rixen cable park. Drag the ramp and rail on a WebGL model of the real lake; layouts save to /data/layout.json."
+  fields: |
+    - name: registry
+      description: "Container registry"
+      required: true
+      default: "docker.io"
+    - name: repo
+      description: "Container image repository (any stock Python 3 image works)"
+      required: true
+      default: "python"
+    - name: tag
+      description: "Container image tag"
+      required: true
+      default: "3.12-alpine"
+    - name: ingressNamespace
+      description: "Ingress controller namespace. Default: ingress-nginx"
+      required: false
+      default: "ingress-nginx"
+    - name: cpu
+      description: "CPU request"
+      required: true
+      default: "250m"
+    - name: memory
+      description: "Memory request"
+      required: true
+      default: "128Mi"
+    - name: dataPersistent
+      description: "Persist obstacle layouts on a PVC. When disabled, layouts live in an emptyDir and are lost on pod restart (browser localStorage still works per-user)."
+      required: false
+      type: boolean
+      default: "true"
+    - name: storageClass
+      description: "Storage class for the layout PVC. Leave empty for cluster default."
+      required: false
+      type: string
+      default: ""
+    - name: storageSize
+      description: "Layout PVC size. Layouts are tiny JSON files — 1Gi is plenty."
+      required: false
+      default: "1Gi"

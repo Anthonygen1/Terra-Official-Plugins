@@ -1,0 +1,13 @@
+resource_id: rixen-park-designer
+name: Rixen Park Designer
+icon: https://github.com/juno-fx/Terra-Official-Plugins/blob/main/plugins/rixen-park-designer/scripts/assets/icon.png?raw=true
+category: Workstations
+description: "Interactive WebGL 3D model of the Ski Rixen USA cable park (Deerfield Beach, FL). Drag and rotate wake obstacles to design course layouts; layouts persist as JSON on the workload's data volume."
+tags:
+  - cluster-level
+  - webgl
+  - 3d
+  - design
+  - workload
+compatibility: genesis-deployment>=3.0.2,orion-deployment>=3.1.0
+fields: []

@@ -1,0 +1,31 @@
+# Kuiper-injected standard values — do not remove
+name: rixen-park-designer
+user:
+group:
+cpu: "250m"
+memory: "128Mi"
+cpuLimit: null
+memoryLimit: null
+idx: 0
+guid: 0
+puid: 0
+host:
+pullSecret:
+session:
+volumeMounts: []
+volumes: []
+env:
+  - name: JUNO
+    value: "true"
+selector:
+plugins: []
+_kuiper:
+
+# Rixen Park Designer settings
+registry: "docker.io"
+repo: "python"
+tag: "3.12-alpine"
+ingressNamespace: "ingress-nginx"
+dataPersistent: true
+storageClass: ""
+storageSize: "1Gi"
