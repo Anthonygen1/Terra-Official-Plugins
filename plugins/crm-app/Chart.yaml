@@ -1,0 +1,6 @@
+apiVersion: v2
+name: crm-app
+description: Argenova CRM - Next.js + Postgres app with Hermes agent chat for Juno
+type: application
+version: 0.0.0
+icon: https://raw.githubusercontent.com/juno-fx/Terra-Official-Plugins/refs/heads/main/plugins/crm-app/assets/logo.png

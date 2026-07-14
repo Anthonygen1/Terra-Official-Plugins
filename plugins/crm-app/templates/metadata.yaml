@@ -1,0 +1,76 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ .Release.Name }}-terra-metadata"
+  labels:
+    kuiper.juno-innovations.com/chart: "{{ .Release.Name }}-scripts-configmap"
+  annotations:
+    juno-innovations.com/workload: "Application"
+data:
+  chart: "{{ .Release.Name }}-scripts-configmap"
+  description: "Argenova CRM - Next.js frontend with embedded Postgres and a Hermes agent chatbox that answers questions about your company data. Served under /crm-app/ (one instance per project)."
+  fields: |
+    - name: registry
+      description: "Registry to pull the CRM app image from"
+      type: string
+      required: true
+      default: "ghcr.io"
+    - name: repo
+      description: "Repository to pull the CRM app image from"
+      type: string
+      required: true
+      default: "anthonygen1/crm-app"
+    - name: tag
+      description: "Tag to pull the CRM app image from"
+      type: string
+      required: true
+      default: "latest"
+    - name: postgres_registry
+      description: "Registry to pull the Postgres image from"
+      type: string
+      required: true
+      default: "docker.io"
+    - name: postgres_repo
+      description: "Repository to pull the Postgres image from"
+      type: string
+      required: true
+      default: "postgres"
+    - name: postgres_tag
+      description: "Tag to pull the Postgres image from"
+      type: string
+      required: true
+      default: "16-alpine"
+    - name: db_password
+      description: "Password for the in-pod CRM Postgres database"
+      type: string
+      required: true
+      default: "crmdev"
+    - name: hermes_url
+      description: "OpenAI-compatible endpoint of the Hermes agent workload (e.g. http://<workload-name>:8642)"
+      type: string
+      required: true
+      default: "http://joan:8642"
+    - name: hermes_model
+      description: "Model name to request from the Hermes endpoint"
+      type: string
+      required: false
+      default: "hermes-agent"
+    - name: hermes_api_key
+      description: "API key for the Hermes api_server platform"
+      type: string
+      required: false
+      default: ""
+    - name: pull_secret
+      description: "Name of an existing docker-registry Secret in the project namespace for pulling the app image (e.g. ghcr-pull). Leave empty for public images."
+      type: string
+      required: false
+      default: ""
+    - name: storage_class
+      description: "Storage class for the Postgres data disk"
+      type: k8sStorageClass
+      required: true
+    - name: storage_size
+      description: "Storage size for the Postgres data disk"
+      type: string
+      required: true
+      default: "2Gi"

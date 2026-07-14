@@ -1,0 +1,46 @@
+# Kuiper-injected standard values — do not remove
+name: crm-app
+user:
+group:
+cpu: "500m"
+memory: "512Mi"
+cpuLimit: null
+memoryLimit: null
+idx: 0
+guid: 0
+puid: 0
+host:
+pullSecret:
+session:
+volumeMounts: []
+volumes: []
+env:
+  - name: JUNO
+    value: "true"
+selector:
+plugins: []
+_kuiper:
+
+# CRM app container (Next.js standalone, basePath /crm-app baked at image build)
+registry: ghcr.io
+repo: anthonygen1/crm-app
+tag: latest
+app_port: 3000
+
+# Postgres sidecar
+postgres_registry: docker.io
+postgres_repo: postgres
+postgres_tag: 16-alpine
+db_password: crmdev
+
+# Hermes agent endpoint (api_server platform)
+hermes_url: http://joan:8642
+hermes_model: hermes-agent
+hermes_api_key: ""
+
+# Image pull secret name (docker-registry Secret in project namespace); empty = public image
+pull_secret: ""
+
+# Storage
+storage_class:
+storage_size: "2Gi"

@@ -1,0 +1,13 @@
+resource_id: crm-app
+name: crm-app
+icon: https://raw.githubusercontent.com/juno-fx/Terra-Official-Plugins/refs/heads/main/plugins/crm-app/assets/logo.png
+description: Argenova CRM workload template - Next.js frontend with embedded Postgres and a chatbox wired to a Hermes agent that answers questions about your company data.
+tags:
+- crm
+- nextjs
+- postgres
+- ai-agent
+- hermes
+- workload
+- cluster-level
+fields: []

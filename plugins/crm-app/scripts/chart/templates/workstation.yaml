@@ -1,0 +1,164 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    kuiper.juno-innovations.com/kuiper-instance: "{{ .Release.Name }}"
+  annotations:
+    juno-innovations.com/workload: "Application"
+    juno-innovations.com/kuiper-state: "{{ .Values._kuiper }}"
+spec:
+  replicas: 1
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      kuiper.juno-innovations.com/kuiper-instance: "{{ .Release.Name }}"
+  template:
+    metadata:
+      labels:
+        kuiper.juno-innovations.com/kuiper-instance: "{{ .Release.Name }}"
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+    spec:
+      hostname: {{ .Values.name }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: juno-innovations.com/workstation
+                    operator: In
+                    values:
+                      - "true"
+                  {{- if .Values.selector }}
+                  {{- range .Values.selector }}
+                  - key: {{ .key | quote }}
+                    operator: In
+                    values:
+                      - {{ .value | quote }}
+                  {{- end }}
+                  {{- end }}
+      tolerations:
+        - key: "juno-innovations.com/workstation"
+          operator: "Exists"
+          effect: "NoSchedule"
+      {{- if or .Values.pullSecret .Values.pull_secret }}
+      imagePullSecrets:
+        {{- if .Values.pullSecret }}
+        - name: "{{ .Values.pullSecret }}"
+        {{- end }}
+        {{- if .Values.pull_secret }}
+        - name: "{{ .Values.pull_secret }}"
+        {{- end }}
+      {{- end }}
+      containers:
+        - name: crm-app
+          imagePullPolicy: IfNotPresent
+          image: "{{ .Values.registry }}/{{ .Values.repo }}:{{ .Values.tag }}"
+          resources:
+            requests:
+              memory: "{{ .Values.memory }}"
+              cpu: "{{ .Values.cpu }}"
+            {{- if or .Values.memoryLimit .Values.cpuLimit }}
+            limits:
+            {{- if .Values.cpuLimit }}
+              cpu: "{{ .Values.cpuLimit }}"
+            {{- end }}
+            {{- if .Values.memoryLimit }}
+              memory: "{{ .Values.memoryLimit }}"
+            {{- end }}
+            {{- end }}
+          startupProbe:
+            tcpSocket:
+              port: {{ .Values.app_port }}
+            initialDelaySeconds: 5
+            failureThreshold: 60
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.app_port }}
+            failureThreshold: 12
+            periodSeconds: 10
+          ports:
+            - containerPort: {{ .Values.app_port }}
+              name: http
+          env:
+            - name: PORT
+              value: "{{ .Values.app_port }}"
+            - name: DATABASE_URL
+              value: "postgres://crm:{{ .Values.db_password }}@localhost:5432/crm"
+            - name: HERMES_URL
+              value: "{{ .Values.hermes_url }}"
+            - name: HERMES_MODEL
+              value: "{{ .Values.hermes_model }}"
+            {{- if .Values.hermes_api_key }}
+            - name: HERMES_API_KEY
+              value: "{{ .Values.hermes_api_key }}"
+            {{- end }}
+            - name: JUNO_WORKSTATION
+              value: "{{ .Values.name }}"
+            - name: JUNO_PROJECT
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: USER
+              value: "{{ .Values.user }}"
+            - name: PREFIX
+              value: "/crm-app/"
+            {{- range .Values.env }}
+            - name: {{ .name | quote }}
+              value: {{ .value | quote }}
+            {{- end }}
+          {{- if .Values.volumeMounts }}
+          volumeMounts:
+            {{- toYaml .Values.volumeMounts | nindent 12 }}
+          {{- end }}
+        - name: postgres
+          imagePullPolicy: IfNotPresent
+          image: "{{ .Values.postgres_registry }}/{{ .Values.postgres_repo }}:{{ .Values.postgres_tag }}"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          startupProbe:
+            exec:
+              command: ["pg_isready", "-U", "crm", "-d", "crm"]
+            initialDelaySeconds: 5
+            failureThreshold: 60
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "crm", "-d", "crm"]
+            failureThreshold: 6
+            periodSeconds: 10
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_USER
+              value: "crm"
+            - name: POSTGRES_PASSWORD
+              value: "{{ .Values.db_password }}"
+            - name: POSTGRES_DB
+              value: "crm"
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+            - name: initdb
+              mountPath: /docker-entrypoint-initdb.d
+              readOnly: true
+      volumes:
+        - name: initdb
+          configMap:
+            name: {{ .Release.Name }}-initdb
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: "{{ .Release.Name }}"
+        {{- if .Values.volumes }}
+        {{- toYaml .Values.volumes | nindent 8 }}
+        {{- end }}
