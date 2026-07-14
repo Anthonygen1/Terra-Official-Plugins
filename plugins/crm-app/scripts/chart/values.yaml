@@ -38,6 +38,9 @@ hermes_url: http://joan:8642
 hermes_model: hermes-agent
 hermes_api_key: ""
 
+# Network exposure: ingress-auth | ingress-noauth | clusterip | nodeport
+network_mode: "ingress-auth"
+
 # Image pull secret name (docker-registry Secret in project namespace); empty = public image
 pull_secret: ""
 

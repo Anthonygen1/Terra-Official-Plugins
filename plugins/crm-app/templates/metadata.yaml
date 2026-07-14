@@ -60,6 +60,16 @@ data:
       type: string
       required: false
       default: ""
+    - name: network_mode
+      description: "How to expose the application"
+      type: select
+      required: true
+      default: "ingress-auth"
+      options:
+        - ingress-auth
+        - ingress-noauth
+        - clusterip
+        - nodeport
     - name: pull_secret
       description: "Name of an existing docker-registry Secret in the project namespace for pulling the app image (e.g. ghcr-pull). Leave empty for public images."
       type: string
