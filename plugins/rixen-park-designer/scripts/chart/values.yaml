@@ -26,6 +26,6 @@ registry: "docker.io"
 repo: "python"
 tag: "3.12-alpine"
 ingressNamespace: "ingress-nginx"
-dataPersistent: true
 storageClass: ""
-storageSize: "1Gi"
+storageSize: "2Gi"
+publicAccess: false

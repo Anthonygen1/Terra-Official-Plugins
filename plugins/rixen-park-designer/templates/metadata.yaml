@@ -34,17 +34,16 @@ data:
       description: "Memory request"
       required: true
       default: "128Mi"
-    - name: dataPersistent
-      description: "Persist obstacle layouts on a PVC. When disabled, layouts live in an emptyDir and are lost on pod restart (browser localStorage still works per-user)."
-      required: false
-      type: boolean
-      default: "true"
     - name: storageClass
-      description: "Storage class for the layout PVC. Leave empty for cluster default."
-      required: false
-      type: string
-      default: ""
+      description: "Storage class for the layout PVC"
+      required: true
+      type: k8sStorageClass
     - name: storageSize
-      description: "Layout PVC size. Layouts are tiny JSON files — 1Gi is plenty."
+      description: "Layout PVC size. Layouts are tiny JSON files — 2Gi is plenty."
       required: false
-      default: "1Gi"
+      default: "2Gi"
+    - name: publicAccess
+      description: "Allow public access (disable authentication)"
+      type: boolean
+      required: true
+      default: false

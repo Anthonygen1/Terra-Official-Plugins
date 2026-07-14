@@ -4,8 +4,10 @@ metadata:
   name: "{{ .Release.Name }}"
   labels:
     kuiper.juno-innovations.com/kuiper-instance: "{{ .Values.name }}"
+  {{- if not .Values.publicAccess }}
   annotations:
     nginx.ingress.kubernetes.io/auth-url: "http://hubble.{{ .Release.Namespace }}.svc.cluster.local:3000/api/auth-workstation/{{ .Values.name }}/"
+  {{- end }}
 spec:
   ingressClassName: "nginx"
   rules:

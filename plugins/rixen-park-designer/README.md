@@ -13,11 +13,14 @@ external requests at runtime).
 - Drag the ramp and rail on the water to design obstacle layouts; Q/E or the
   on-screen buttons rotate the selected obstacle.
 - Every edit is debounced and POSTed to `api/layout`, which writes
-  `/data/layout.json` atomically. With `dataPersistent` enabled (default)
-  that path is a PVC, so layouts survive pod restarts and are shared by
-  everyone who opens the workload.
+  `/data/layout.json` atomically. That path is a PVC (`storageClass` picker,
+  `storageSize` default 2Gi), so layouts survive pod restarts and are shared
+  by everyone who opens the workload.
 - Browser localStorage acts as an offline fallback; the server copy wins on
   load.
+- `publicAccess` (default off) removes Hubble authentication from the
+  ingress — anyone who can reach the cluster can open the app. Use only in
+  trusted network environments.
 
 ## Routes
 
