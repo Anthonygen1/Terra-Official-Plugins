@@ -26,16 +26,20 @@ spec:
         fsGroup: {{ .Values.guid }}
       hostname: "{{ .Values.name }}"
 
-      {{- if .Values.pullSecret }}
+      {{- if or .Values.pullSecret .Values.pull_secret }}
       imagePullSecrets:
+        {{- if .Values.pullSecret }}
         - name: "{{ .Values.pullSecret }}"
+        {{- end }}
+        {{- if .Values.pull_secret }}
+        - name: "{{ .Values.pull_secret }}"
+        {{- end }}
       {{- end }}
 
       containers:
         - name: rixen-park-designer
           image: "{{ .Values.registry }}/{{ .Values.repo }}:{{ .Values.tag }}"
-          imagePullPolicy: IfNotPresent
-          command: ["python", "/app/server.py"]
+          imagePullPolicy: {{ if eq .Values.tag "latest" }}Always{{ else }}IfNotPresent{{ end }}
           resources:
             requests:
               memory: "{{ .Values.memory }}"
@@ -70,9 +74,6 @@ spec:
             runAsNonRoot: true
             runAsUser: {{ .Values.puid }}
           volumeMounts:
-            - name: app
-              mountPath: /app
-              readOnly: true
             - name: layout-data
               mountPath: /data
             {{- if .Values.volumeMounts }}
@@ -80,9 +81,6 @@ spec:
             {{- end }}
 
       volumes:
-        - name: app
-          configMap:
-            name: "{{ .Release.Name }}-app"
         - name: layout-data
           persistentVolumeClaim:
             claimName: "{{ .Values.name }}-data"

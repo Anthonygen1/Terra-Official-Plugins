@@ -11,17 +11,22 @@ data:
   description: "3D obstacle layout designer for the Ski Rixen cable park. Drag the ramp and rail on a WebGL model of the real lake; layouts save to /data/layout.json."
   fields: |
     - name: registry
-      description: "Container registry"
+      description: "Registry to pull the app image from"
       required: true
-      default: "docker.io"
+      default: "ghcr.io"
     - name: repo
-      description: "Container image repository (any stock Python 3 image works)"
+      description: "Repository to pull the app image from"
       required: true
-      default: "python"
+      default: "anthonygen1/rixen-park-builder"
     - name: tag
-      description: "Container image tag"
+      description: "Tag to pull the app image from"
       required: true
-      default: "3.12-alpine"
+      default: "latest"
+    - name: pull_secret
+      description: "Name of an existing docker-registry Secret in the project namespace for pulling the app image (e.g. ghcr-pull). Leave empty for public images."
+      type: string
+      required: false
+      default: ""
     - name: ingressNamespace
       description: "Ingress controller namespace. Default: ingress-nginx"
       required: false

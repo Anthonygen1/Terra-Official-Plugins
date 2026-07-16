@@ -21,11 +21,15 @@ selector:
 plugins: []
 _kuiper:
 
-# Rixen Park Designer settings
-registry: "docker.io"
-repo: "python"
-tag: "3.12-alpine"
+# Rixen Park Designer settings (app baked into the image, built from
+# the rixen-park-builder repo by GitHub Actions)
+registry: "ghcr.io"
+repo: "anthonygen1/rixen-park-builder"
+tag: "latest"
 ingressNamespace: "ingress-nginx"
+
+# Image pull secret name (docker-registry Secret in project namespace); empty = public image
+pull_secret: ""
 storageClass: ""
 storageSize: "2Gi"
 publicAccess: false
