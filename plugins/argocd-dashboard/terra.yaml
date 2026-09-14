@@ -16,3 +16,6 @@ fields:
   - name: prefix
     description: Connection URL prefix. i.e. `/argocd`. Will default to `/argocd` if not set. This doesn't need changing in most cases.
     required: false
+  - name: blank field
+    description: This is a blank field to test
+    required: false
