@@ -1,4 +1,4 @@
-# ArgoCD Dashboard
+# ArgoCD Dashboard TESTING
 
 ![ArgoCD Dashboard](https://github.com/juno-fx/Terra-Official-Plugins/blob/main/plugins/argocd-dashboard/assets/logo.png?raw=true)
 
