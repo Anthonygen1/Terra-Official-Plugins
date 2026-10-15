@@ -2,7 +2,7 @@ name: runtime-js
 user:
 registry: docker.io
 repo: node
-tag: "22"
+tag: "24"
 group:
 cpu: "1"
 memory: "1Gi"
@@ -30,3 +30,6 @@ env:
 selector:
 plugins: []
 _kuiper:
+domain: ""
+tls_issuer: ""
+publish_dns: false

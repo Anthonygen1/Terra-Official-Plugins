@@ -11,7 +11,7 @@ data:
   description: "Python runtime environment — clone, build, and run your application"
   fields: |
     - name: icon
-      default: "https://raw.githubusercontent.com/juno-fx/Terra-Official-Plugins/main/plugins/runtime-python/assets/icon.svg"
+      default: "https://github.com/juno-fx/Terra-Official-Plugins/blob/main/plugins/runtime-python/assets/icon.svg?raw=true"
     - name: registry
       description: "Container registry"
       type: string
@@ -26,9 +26,9 @@ data:
       description: "Image tag"
       type: string
       required: true
-      default: "3.12"
+      default: "3.14"
     - name: git_url
-      description: "Git repository URL to clone (leave empty when using source_path)"
+      description: "Git repository URL to clone (leave empty when using source_path). WARNING: any credential embedded in this URL is stored in plaintext in the pod spec and in the workload record, and is readable by anyone with namespace-level read access. Use only short-lived, read-only, single-repository tokens."
       type: string
       required: false
       default: ""
@@ -66,6 +66,19 @@ data:
         - ingress-noauth
         - clusterip
         - nodeport
+    - name: domain
+      description: "Domain the application is published under when network_mode is ingress-noauth. The workload is served at <workload name>.<domain>. Needs the Certificate Manager and Certificate Issuer plugins for TLS, and the ExternalDNS plugin or a wildcard DNS record"
+      type: string
+      required: false
+    - name: tls_issuer
+      description: "cert-manager ClusterIssuer used to obtain the certificate for that domain, for example letsencrypt-prod"
+      type: string
+      required: false
+    - name: publish_dns
+      description: "Annotate the route so the ExternalDNS plugin creates the DNS record for that domain"
+      type: boolean
+      required: false
+      default: false
     - name: gpu
       description: "Attach a GPU"
       type: boolean
