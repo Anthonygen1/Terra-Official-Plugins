@@ -1,0 +1,77 @@
+{{- $prefix := trimSuffix "/" .Values.prefix -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ .Release.Name }}"
+  labels:
+    terra.juno-innovations.com/app: "{{ .Release.Name }}"
+spec:
+  replicas: 1
+  revisionHistoryLimit: 0
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      terra.juno-innovations.com/app: "{{ .Release.Name }}"
+  template:
+    metadata:
+      labels:
+        terra.juno-innovations.com/app: "{{ .Release.Name }}"
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: pi-hole
+          image: pihole/pihole:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: TZ
+              value: {{ .Values.timezone | quote }}
+            - name: FTLCONF_webserver_api_password
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-admin"
+                  key: password
+            - name: FTLCONF_dns_upstreams
+              value: {{ .Values.upstream_dns | quote }}
+            # Pod network interfaces are not "local" from FTL's point of view;
+            # listen on all interfaces so Service traffic is answered.
+            - name: FTLCONF_dns_listeningMode
+              value: "all"
+            # HTTP only — TLS is terminated at the ingress.
+            - name: FTLCONF_webserver_port
+              value: "80o"
+            {{- if $prefix }}
+            - name: FTLCONF_webserver_paths_prefix
+              value: {{ $prefix | quote }}
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+            - name: dns-tcp
+              containerPort: 53
+              protocol: TCP
+            - name: dns-udp
+              containerPort: 53
+              protocol: UDP
+          readinessProbe:
+            httpGet:
+              path: "{{ $prefix }}/admin/"
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: "{{ $prefix }}/admin/"
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+          volumeMounts:
+            - name: mount
+              mountPath: /etc/pihole
+              subPath: {{ .Values.destination }}
+      volumes:
+        - name: mount
+          persistentVolumeClaim:
+            claimName: {{ .Values.install_volume.name }}

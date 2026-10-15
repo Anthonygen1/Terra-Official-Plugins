@@ -1,0 +1,13 @@
+# configuration
+host:
+prefix: "/"
+admin_password: "changeme"
+upstream_dns: "1.1.1.1;1.0.0.1"
+timezone: "UTC"
+dns_service_type: LoadBalancer
+loadbalancer_ip: ""
+destination: "pi-hole"
+install_volume:
+  name: tdk-home
+  sub_path: pi-hole
+  container_path: /apps # ignored

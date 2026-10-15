@@ -1,0 +1,8 @@
+{{- $prefix := trimSuffix "/" .Values.prefix -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-terra-metadata
+data:
+  chart: "{{ .Chart.Name }}"
+  ingress: "{{ $prefix }}/admin/"

@@ -1,0 +1,44 @@
+# Web admin dashboard — reached through the Ingress only.
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Release.Name }}"
+  labels:
+    terra.juno-innovations.com/app: "{{ .Release.Name }}"
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+  selector:
+    terra.juno-innovations.com/app: "{{ .Release.Name }}"
+---
+# DNS resolver — this is what clients / routers point at.
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Release.Name }}-dns"
+  labels:
+    terra.juno-innovations.com/app: "{{ .Release.Name }}"
+spec:
+  type: {{ .Values.dns_service_type }}
+  {{- if and (eq .Values.dns_service_type "LoadBalancer") .Values.loadbalancer_ip }}
+  loadBalancerIP: {{ .Values.loadbalancer_ip | quote }}
+  {{- end }}
+  {{- if eq .Values.dns_service_type "LoadBalancer" }}
+  # Keep the client source IP so the Pi-hole dashboard shows real client addresses.
+  externalTrafficPolicy: Local
+  {{- end }}
+  ports:
+    - name: dns-tcp
+      port: 53
+      targetPort: dns-tcp
+      protocol: TCP
+    - name: dns-udp
+      port: 53
+      targetPort: dns-udp
+      protocol: UDP
+  selector:
+    terra.juno-innovations.com/app: "{{ .Release.Name }}"

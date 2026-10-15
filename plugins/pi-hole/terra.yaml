@@ -1,0 +1,52 @@
+resource_id: pi-hole
+name: Pi-hole
+icon: https://github.com/juno-fx/Terra-Official-Plugins/blob/main/plugins/pi-hole/assets/logo.png?raw=true
+description: Network-wide ad and tracker blocking DNS sinkhole with a web admin dashboard. Point your devices or router at the exposed DNS service to block ads for every client on the network.
+category: Infrastructure
+tags:
+  - dns
+  - ad-blocking
+  - networking
+  - privacy
+  - web-interface
+editable: true
+fields:
+  - name: host
+    description: Hostname for the Pi-hole admin dashboard, i.e. `pihole.example.com`. You must set up a DNS record for this host pointing to your cluster's ingress controller.
+    required: true
+  - name: prefix
+    description: URL prefix the admin dashboard is served under, i.e. `/pihole`. Defaults to `/` if not set. The dashboard lives at `<prefix>/admin/`.
+    required: false
+    default: "/"
+  - name: admin_password
+    description: Password for the Pi-hole admin dashboard login.
+    required: true
+  - name: upstream_dns
+    description: Upstream DNS resolvers Pi-hole forwards non-blocked queries to. Semicolon-separated, optionally with `#port`, i.e. `1.1.1.1;1.0.0.1` or `10.0.0.2#5335`.
+    required: true
+    default: "1.1.1.1;1.0.0.1"
+  - name: timezone
+    description: Timezone used for query logs and statistics, i.e. `America/New_York`.
+    required: true
+    default: "UTC"
+  - name: dns_service_type
+    description: How the DNS resolver (port 53 TCP/UDP) is exposed. `LoadBalancer` requires a load-balancer provider such as MetalLB and gives clients a stable IP. `NodePort` exposes a high port on every node. `ClusterIP` keeps DNS reachable only from inside the cluster.
+    required: true
+    type: select
+    default: LoadBalancer
+    options:
+      - LoadBalancer
+      - NodePort
+      - ClusterIP
+  - name: loadbalancer_ip
+    description: Optional fixed IP to request for the DNS LoadBalancer service, i.e. `192.168.1.53`. Must be inside your load-balancer address pool. Ignored unless `dns_service_type` is `LoadBalancer`.
+    required: false
+    default: ""
+  - name: install_volume
+    description: Shared volume used to persist Pi-hole configuration, blocklists (gravity database) and query logs.
+    required: true
+    type: shared-volume
+  - name: destination
+    description: Sub-directory on the install volume to store Pi-hole data in (DO NOT ADD A LEADING SLASH "/").
+    required: true
+    default: "pi-hole"

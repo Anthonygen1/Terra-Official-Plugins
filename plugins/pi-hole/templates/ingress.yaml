@@ -1,0 +1,23 @@
+{{- $prefix := trimSuffix "/" .Values.prefix -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: "{{ .Release.Name }}"
+  labels:
+    terra.juno-innovations.com/app: "{{ .Release.Name }}"
+  annotations:
+    nginx.ingress.kubernetes.io/auth-url: "http://genesis.{{ .Release.Namespace }}.svc.cluster.local:3000/api/auth-service/{{ .Release.Name }}/"
+    nginx.ingress.kubernetes.io/auth-signin: /unauthorized/
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: "{{ .Values.host }}"
+      http:
+        paths:
+          - path: {{ $prefix | default "/" }}
+            pathType: Prefix
+            backend:
+              service:
+                name: "{{ .Release.Name }}"
+                port:
+                  number: 80
