@@ -47,13 +47,17 @@ spec:
             - name: FTLCONF_webserver_paths_prefix
               value: {{ $prefix | quote }}
             {{- end }}
-            # Pi-hole defaults to X-Frame-Options: DENY / frame-ancestors 'none'.
+            # Pi-hole defaults to X-Frame-Options: DENY / CSP frame-ancestors 'none'.
             # The dashboard is served from the Genesis host and embedded in an
             # iFrame, so allow same-origin framing only.
+            # NOTE: FTL splits array env vars on ';' as well as newlines, so a
+            # multi-directive CSP cannot be passed here (it gets truncated to
+            # "default-src 'none'", which blocks all CSS/JS). Use a single
+            # frame-ancestors directive only.
             - name: FTLCONF_webserver_headers
               value: |-
                 X-DNS-Prefetch-Control: off
-                Content-Security-Policy: default-src 'none'; connect-src 'self'; font-src 'self'; frame-ancestors 'self'; img-src 'self'; manifest-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; form-action 'self'
+                Content-Security-Policy: frame-ancestors 'self'
                 X-Frame-Options: SAMEORIGIN
                 X-XSS-Protection: 0
                 X-Content-Type-Options: nosniff
