@@ -43,6 +43,11 @@ fields:
     description: Optional fixed IP to request for the DNS LoadBalancer service, i.e. `192.168.1.53`. Must be inside your load-balancer address pool. Ignored unless `dns_service_type` is `LoadBalancer`.
     required: false
     default: ""
+  - name: k3s_servicelb
+    description: Allow k3s's built-in ServiceLB (klipper) to publish the DNS LoadBalancer. Leave OFF. ServiceLB opens port 53 as a hostPort on every node, which hijacks the node's own loopback DNS resolver and breaks host DNS (including image pulls). Use the MetalLB plugin or a cloud load balancer instead. Ignored unless `dns_service_type` is `LoadBalancer`.
+    required: false
+    type: boolean
+    default: false
   - name: storage_size
     description: Size of the persistent volume holding Pi-hole configuration, blocklists (gravity database) and query logs, i.e. `2Gi`.
     required: true

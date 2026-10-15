@@ -42,6 +42,8 @@ spec:
             - name: FTLCONF_webserver_port
               value: "80o"
             {{- if $prefix }}
+            # Makes FTL generate links/redirects under the prefix. FTL still
+            # serves at /admin/ and /api/; the Ingress rewrites the prefix away.
             - name: FTLCONF_webserver_paths_prefix
               value: {{ $prefix | quote }}
             {{- end }}
@@ -66,15 +68,16 @@ spec:
             - name: dns-udp
               containerPort: 53
               protocol: UDP
+          # FTL serves /admin/ unprefixed; the ingress strips the prefix.
           readinessProbe:
             httpGet:
-              path: "{{ $prefix }}/admin/"
+              path: /admin/login
               port: http
             initialDelaySeconds: 10
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: "{{ $prefix }}/admin/"
+              path: /admin/login
               port: http
             initialDelaySeconds: 60
             periodSeconds: 30

@@ -30,7 +30,7 @@ Pi-hole configuration, the gravity blocklist database and query logs are persist
 - Cluster administrator access in Terra
 - A default StorageClass (or one you name in `storage_class`) able to provision a `ReadWriteOnce` volume
 - An nginx ingress controller in the cluster serving the Genesis host
-- For `dns_service_type: LoadBalancer` — a load-balancer provider such as the **MetalLB** plugin (bare metal) or a cloud LB
+- For `dns_service_type: LoadBalancer` — a load-balancer provider such as the **MetalLB** plugin (bare metal) or a cloud LB. **k3s's built-in ServiceLB is not suitable** (see Notes)
 
 ---
 
@@ -59,6 +59,7 @@ Once the pod is running, the dashboard appears in Genesis for admin users, or di
 | `timezone` | **string** · Required · Default: `UTC`<br>Timezone for query logs and statistics (e.g. `America/New_York`). |
 | `dns_service_type` | **select** · Required · Default: `LoadBalancer`<br>How port 53 is exposed: `LoadBalancer` (stable external IP, needs an LB provider), `NodePort` (high port on every node) or `ClusterIP` (in-cluster only). |
 | `loadbalancer_ip` | **string** · Optional<br>Fixed IP to request for the DNS LoadBalancer (e.g. `192.168.1.53`). Must be within your LB address pool. Ignored for other service types. |
+| `k3s_servicelb` | **boolean** · Optional · Default: `false`<br>Allow k3s's built-in ServiceLB (klipper) to publish the DNS LoadBalancer. Leave off — see Notes. Ignored for other service types. |
 | `storage_size` | **string** · Required · Default: `2Gi`<br>Size of the PVC holding Pi-hole configuration, gravity database and query logs. |
 | `storage_class` | **string** · Optional<br>StorageClass for the data PVC. Leave empty for the cluster default. |
 
@@ -67,6 +68,7 @@ Once the pod is running, the dashboard appears in Genesis for admin users, or di
 ## Notes
 
 - **Pointing clients at Pi-hole:** with `LoadBalancer`, use the external IP of the `<release>-dns` Service in the `pi-hole` namespace as the DNS server on your router or devices. With `NodePort`, use any node IP plus the assigned port (`kubectl -n pi-hole get svc`) — most clients cannot use a non-standard DNS port, so `LoadBalancer` is strongly preferred for LAN use.
+- **k3s ServiceLB (klipper) and port 53:** k3s's built-in LoadBalancer implements Services by opening the port as a hostPort on every node. For port 53 the CNI portmap rules DNAT the node's own loopback resolver (`127.0.0.53`, systemd-resolved) into the cluster. Until the Pi-hole pod is ready that traffic is rejected, so the node loses DNS and cannot even pull the Pi-hole image; afterwards all node DNS silently flows through Pi-hole. The DNS Service is therefore annotated `svccontroller.k3s.cattle.io/enablelb: "false"` by default. On k3s without MetalLB the Service will show `<pending>` — install the **MetalLB** plugin, or switch `dns_service_type` to `NodePort`.
 - **Client IPs in the dashboard:** the LoadBalancer Service uses `externalTrafficPolicy: Local` so Pi-hole sees real client addresses rather than node IPs. Traffic only reaches nodes where the pod is scheduled; MetalLB handles this automatically in layer2 mode.
 - **Embedded dashboard:** Pi-hole ships with `X-Frame-Options: DENY`. This plugin relaxes it to `SAMEORIGIN` (and CSP `frame-ancestors 'self'`) so the dashboard can be embedded in Genesis, which is served from the same host. It is still protected by Genesis authentication and the admin permission, plus Pi-hole's own login.
 - **Single replica:** Pi-hole stores state in an on-disk SQLite database, so the Deployment runs one replica with a `Recreate` strategy. Expect a brief DNS outage during upgrades.

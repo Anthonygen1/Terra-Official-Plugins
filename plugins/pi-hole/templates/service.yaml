@@ -24,6 +24,16 @@ metadata:
   namespace: {{ .Values.namespace }}
   labels:
     terra.juno-innovations.com/app: "{{ .Release.Name }}"
+  {{- if and (eq .Values.dns_service_type "LoadBalancer") (not .Values.k3s_servicelb) }}
+  annotations:
+    # k3s's built-in ServiceLB (klipper) implements LoadBalancer Services by
+    # opening the port as a hostPort on every node. For port 53 that DNATs the
+    # node's own loopback resolver (systemd-resolved at 127.0.0.53) into the
+    # cluster, which breaks host DNS — including image pulls — until Pi-hole is
+    # up, and routes all node DNS through Pi-hole afterwards. Opt out unless the
+    # user explicitly asks for it; use MetalLB (or a cloud LB) instead.
+    svccontroller.k3s.cattle.io/enablelb: "false"
+  {{- end }}
 spec:
   type: {{ .Values.dns_service_type }}
   {{- if and (eq .Values.dns_service_type "LoadBalancer") .Values.loadbalancer_ip }}
