@@ -1,13 +1,13 @@
 # configuration
 host:
-prefix: "/"
+prefix: "/pihole"
 admin_password: "changeme"
 upstream_dns: "1.1.1.1;1.0.0.1"
 timezone: "UTC"
 dns_service_type: LoadBalancer
 loadbalancer_ip: ""
-destination: "pi-hole"
-install_volume:
-  name: tdk-home
-  sub_path: pi-hole
-  container_path: /apps # ignored
+storage_size: "2Gi"
+storage_class: ""
+
+# Namespace the plugin creates and installs Pi-hole into.
+namespace: pi-hole

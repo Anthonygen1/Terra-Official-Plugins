@@ -6,3 +6,4 @@ metadata:
 data:
   chart: "{{ .Chart.Name }}"
   ingress: "{{ $prefix }}/admin/"
+  permission: "admin"

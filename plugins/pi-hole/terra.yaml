@@ -1,23 +1,24 @@
 resource_id: pi-hole
 name: Pi-hole
 icon: https://github.com/juno-fx/Terra-Official-Plugins/blob/main/plugins/pi-hole/assets/logo.png?raw=true
-description: Network-wide ad and tracker blocking DNS sinkhole with a web admin dashboard. Point your devices or router at the exposed DNS service to block ads for every client on the network.
+description: Network-wide ad and tracker blocking DNS sinkhole, installed once per cluster with its admin dashboard embedded directly in Genesis. Point your devices or router at the exposed DNS service to block ads for every client on the network.
 category: Infrastructure
 tags:
   - dns
   - ad-blocking
   - networking
   - privacy
-  - web-interface
+  - cluster-level
+  - dashboard
 editable: true
 fields:
   - name: host
-    description: Hostname for the Pi-hole admin dashboard, i.e. `pihole.example.com`. You must set up a DNS record for this host pointing to your cluster's ingress controller.
+    description: The DNS name of your genesis host.
     required: true
   - name: prefix
-    description: URL prefix the admin dashboard is served under, i.e. `/pihole`. Defaults to `/` if not set. The dashboard lives at `<prefix>/admin/`.
+    description: Connection URL prefix. i.e. `/pihole`. Will default to `/pihole` if not set. This doesn't need changing in most cases. The dashboard lives at `<prefix>/admin/`.
     required: false
-    default: "/"
+    default: "/pihole"
   - name: admin_password
     description: Password for the Pi-hole admin dashboard login.
     required: true
@@ -42,11 +43,11 @@ fields:
     description: Optional fixed IP to request for the DNS LoadBalancer service, i.e. `192.168.1.53`. Must be inside your load-balancer address pool. Ignored unless `dns_service_type` is `LoadBalancer`.
     required: false
     default: ""
-  - name: install_volume
-    description: Shared volume used to persist Pi-hole configuration, blocklists (gravity database) and query logs.
+  - name: storage_size
+    description: Size of the persistent volume holding Pi-hole configuration, blocklists (gravity database) and query logs, i.e. `2Gi`.
     required: true
-    type: shared-volume
-  - name: destination
-    description: Sub-directory on the install volume to store Pi-hole data in (DO NOT ADD A LEADING SLASH "/").
-    required: true
-    default: "pi-hole"
+    default: "2Gi"
+  - name: storage_class
+    description: StorageClass for the Pi-hole data volume. Leave empty to use the cluster default StorageClass.
+    required: false
+    default: ""

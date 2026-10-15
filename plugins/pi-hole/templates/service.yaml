@@ -3,6 +3,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: "{{ .Release.Name }}"
+  namespace: {{ .Values.namespace }}
   labels:
     terra.juno-innovations.com/app: "{{ .Release.Name }}"
 spec:
@@ -20,6 +21,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: "{{ .Release.Name }}-dns"
+  namespace: {{ .Values.namespace }}
   labels:
     terra.juno-innovations.com/app: "{{ .Release.Name }}"
 spec:
