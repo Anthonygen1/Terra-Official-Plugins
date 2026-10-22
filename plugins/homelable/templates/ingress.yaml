@@ -1,0 +1,38 @@
+{{- if and (eq .Values.service_type "Ingress") .Values.host }}
+# Dedicated hostname, served at the root. The prebuilt frontend bakes its base
+# path at build time (VITE_BASE_PATH=/), so it cannot live under a prefix on
+# the Genesis host. A separate hostname also means the Genesis session cookie
+# never reaches it, so the platform auth-url gate cannot be used here;
+# Homelable's own login protects the UI and API.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: "{{ .Release.Name }}"
+  namespace: {{ .Values.namespace }}
+  labels:
+    terra.juno-innovations.com/app: "{{ .Release.Name }}"
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "64m"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: "{{ .Values.host }}"
+      http:
+        paths:
+          {{- if .Values.enable_mcp }}
+          - path: /mcp
+            pathType: Prefix
+            backend:
+              service:
+                name: "{{ .Release.Name }}"
+                port:
+                  number: 8001
+          {{- end }}
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: "{{ .Release.Name }}"
+                port:
+                  number: 80
+{{- end }}

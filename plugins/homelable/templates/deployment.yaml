@@ -1,0 +1,206 @@
+{{- $ranges := list -}}
+{{- range splitList "," .Values.scanner_ranges -}}
+{{- $r := trim . -}}
+{{- if $r }}{{ $ranges = append $ranges $r }}{{ end -}}
+{{- end -}}
+{{- $isIngress := eq .Values.service_type "Ingress" -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ .Release.Name }}"
+  namespace: {{ .Values.namespace }}
+  labels:
+    terra.juno-innovations.com/app: "{{ .Release.Name }}"
+spec:
+  replicas: 1
+  revisionHistoryLimit: 0
+  # SQLite on a ReadWriteOnce volume — one pod at a time.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      terra.juno-innovations.com/app: "{{ .Release.Name }}"
+  template:
+    metadata:
+      labels:
+        terra.juno-innovations.com/app: "{{ .Release.Name }}"
+      annotations:
+        # Env comes from a Secret/ConfigMap, which does not restart the pod on
+        # its own. Hash the inputs so an edit of the plugin fields rolls the pod.
+        checksum/config: {{ printf "%s|%s|%s|%s|%v" .Values.admin_username .Values.admin_password .Values.mcp_api_key .Values.scanner_ranges .Values.expose_api_docs | sha256sum }}
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        # ---------------------------------------------------------------
+        # Backend — FastAPI + nmap scanner + status checker (SQLite)
+        # ---------------------------------------------------------------
+        - name: backend
+          image: ghcr.io/pouzor/homelable-backend:{{ .Values.image_tag }}
+          imagePullPolicy: IfNotPresent
+          # Upstream expects a pre-computed bcrypt hash in AUTH_PASSWORD_HASH.
+          # Hash the plain password at start with the image's own bcrypt so the
+          # chart stays deterministic (Sprig's htpasswd salts randomly, which
+          # would re-render the Secret on every ArgoCD sync).
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              export AUTH_PASSWORD_HASH="$(python -c 'import bcrypt, os; print(bcrypt.hashpw(os.environ["HOMELABLE_ADMIN_PASSWORD"].encode(), bcrypt.gensalt()).decode())')"
+              unset HOMELABLE_ADMIN_PASSWORD
+              exec uvicorn app.main:app --host 0.0.0.0 --port 8000
+          env:
+            - name: HOMELABLE_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-auth"
+                  key: admin_password
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-auth"
+                  key: secret_key
+            - name: AUTH_MODE
+              value: "local"
+            - name: AUTH_USERNAME
+              value: {{ .Values.admin_username | quote }}
+            - name: SQLITE_PATH
+              value: "/app/data/homelab.db"
+            # The frontend proxies /api on the same origin, so CORS only
+            # matters for direct cross-origin API use. Pin it to the hostname
+            # in Ingress mode; the LB/NodePort address is unknown at render.
+            - name: CORS_ORIGINS
+              {{- if and $isIngress .Values.host }}
+              value: {{ list (printf "https://%s" .Values.host) (printf "http://%s" .Values.host) | toJson | quote }}
+              {{- else }}
+              value: '["*"]'
+              {{- end }}
+            - name: SCANNER_RANGES
+              value: {{ $ranges | toJson | quote }}
+            - name: STATUS_CHECKER_INTERVAL
+              value: {{ .Values.status_checker_interval | quote }}
+            {{- if .Values.enable_mcp }}
+            - name: MCP_SERVICE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-auth"
+                  key: mcp_service_key
+            {{- end }}
+          ports:
+            - name: api
+              containerPort: 8000
+              protocol: TCP
+          # nmap needs raw sockets for ARP/SYN scans; the image runs as root
+          # (no USER directive) so the capability is usable. MAC addresses are
+          # still not visible from the pod network — see README.
+          securityContext:
+            capabilities:
+              drop: ["ALL"]
+              add: ["NET_RAW"]
+          startupProbe:
+            httpGet:
+              path: /api/v1/health
+              port: api
+            periodSeconds: 5
+            failureThreshold: 24
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: api
+            periodSeconds: 30
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+        # ---------------------------------------------------------------
+        # Frontend — React SPA served by nginx, proxies /api to the backend
+        # ---------------------------------------------------------------
+        - name: frontend
+          image: ghcr.io/pouzor/homelable-frontend:{{ .Values.image_tag }}
+          imagePullPolicy: IfNotPresent
+          env:
+            # Same pod → backend is reachable on loopback.
+            - name: BACKEND_UPSTREAM
+              value: "127.0.0.1:8000"
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 5
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+          volumeMounts:
+            - name: nginx
+              mountPath: /etc/nginx/templates/homelable.conf.template
+              subPath: homelable.conf.template
+              readOnly: true
+        {{- if .Values.enable_mcp }}
+        # ---------------------------------------------------------------
+        # MCP server — AI-client access to the backend (port 8001, /mcp)
+        # ---------------------------------------------------------------
+        - name: mcp
+          image: ghcr.io/pouzor/homelable-mcp:{{ .Values.image_tag }}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: BACKEND_URL
+              value: "http://127.0.0.1:8000"
+            - name: MCP_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-auth"
+                  key: mcp_api_key
+            - name: MCP_SERVICE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-auth"
+                  key: mcp_service_key
+          ports:
+            - name: mcp
+              containerPort: 8001
+              protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /health
+              port: mcp
+            periodSeconds: 5
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: mcp
+            periodSeconds: 30
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+        {{- end }}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: "{{ .Release.Name }}-data"
+        - name: nginx
+          configMap:
+            name: "{{ .Release.Name }}-nginx"

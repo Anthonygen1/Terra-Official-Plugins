@@ -1,0 +1,17 @@
+# configuration
+service_type: LoadBalancer
+loadbalancer_ip: ""
+host: ""
+admin_username: admin
+admin_password: "changeme"
+scanner_ranges: "192.168.1.0/24"
+status_checker_interval: 60
+enable_mcp: false
+mcp_api_key: ""
+expose_api_docs: false
+image_tag: "3.6.0"
+storage_size: "2Gi"
+storage_class: ""
+
+# Namespace the plugin creates and installs Homelable into.
+namespace: homelable

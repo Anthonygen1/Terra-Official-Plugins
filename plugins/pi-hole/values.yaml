@@ -6,7 +6,7 @@ upstream_dns: "1.1.1.1;1.0.0.1"
 timezone: "UTC"
 dns_service_type: LoadBalancer
 loadbalancer_ip: ""
-k3s_servicelb: false
+external_traffic_policy: Local
 storage_size: "2Gi"
 storage_class: ""
 

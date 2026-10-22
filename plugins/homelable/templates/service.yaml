@@ -1,0 +1,27 @@
+{{- $isIngress := eq .Values.service_type "Ingress" -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Release.Name }}"
+  namespace: {{ .Values.namespace }}
+  labels:
+    terra.juno-innovations.com/app: "{{ .Release.Name }}"
+spec:
+  # Ingress mode keeps the Service internal; nginx fronts it on `host`.
+  type: {{ if $isIngress }}ClusterIP{{ else }}{{ .Values.service_type }}{{ end }}
+  {{- if and (eq .Values.service_type "LoadBalancer") .Values.loadbalancer_ip }}
+  loadBalancerIP: {{ .Values.loadbalancer_ip | quote }}
+  {{- end }}
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+    {{- if .Values.enable_mcp }}
+    - name: mcp
+      port: 8001
+      targetPort: mcp
+      protocol: TCP
+    {{- end }}
+  selector:
+    terra.juno-innovations.com/app: "{{ .Release.Name }}"

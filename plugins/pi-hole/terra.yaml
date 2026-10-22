@@ -1,6 +1,6 @@
 resource_id: pi-hole
 name: Pi-hole
-icon: https://github.com/juno-fx/Terra-Official-Plugins/blob/main/plugins/pi-hole/assets/logo.png?raw=true
+icon: https://raw.githubusercontent.com/Anthonygen1/Terra-Official-Plugins/refs/heads/dev/plugins/pi-hole/assets/logo.png
 description: Network-wide ad and tracker blocking DNS sinkhole, installed once per cluster with its admin dashboard embedded directly in Genesis. Point your devices or router at the exposed DNS service to block ads for every client on the network.
 category: Infrastructure
 tags:
@@ -43,11 +43,14 @@ fields:
     description: Optional fixed IP to request for the DNS LoadBalancer service, i.e. `192.168.1.53`. Must be inside your load-balancer address pool. Ignored unless `dns_service_type` is `LoadBalancer`.
     required: false
     default: ""
-  - name: k3s_servicelb
-    description: Allow k3s's built-in ServiceLB (klipper) to publish the DNS LoadBalancer. Leave OFF. ServiceLB opens port 53 as a hostPort on every node, which hijacks the node's own loopback DNS resolver and breaks host DNS (including image pulls). Use the MetalLB plugin or a cloud load balancer instead. Ignored unless `dns_service_type` is `LoadBalancer`.
-    required: false
-    type: boolean
-    default: false
+  - name: external_traffic_policy
+    description: Traffic policy for the DNS LoadBalancer. `Local` preserves client IPs (dashboard shows real devices) but only publishes nodes where the Pi-hole pod runs. `Cluster` publishes every node and keeps working if the pod moves, but clients appear as node IPs. Ignored unless `dns_service_type` is `LoadBalancer`.
+    required: true
+    type: select
+    default: Local
+    options:
+      - Local
+      - Cluster
   - name: storage_size
     description: Size of the persistent volume holding Pi-hole configuration, blocklists (gravity database) and query logs, i.e. `2Gi`.
     required: true

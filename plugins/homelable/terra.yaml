@@ -1,0 +1,73 @@
+resource_id: homelable
+name: Homelable
+icon: https://raw.githubusercontent.com/Anthonygen1/Terra-Official-Plugins/refs/heads/dev/plugins/homelable/assets/logo.png
+description: Self-hosted homelab visualizer. Draws an interactive network diagram of your LAN, discovers hosts with nmap, tracks live up/down status, documents racks and services, and optionally exposes an MCP server so AI clients can query your infrastructure.
+category: Infrastructure
+tags:
+  - homelab
+  - networking
+  - monitoring
+  - documentation
+  - mcp
+  - cluster-level
+editable: true
+fields:
+  - name: service_type
+    description: How the web UI is reached. `LoadBalancer` gives a stable LAN IP (needs MetalLB or another LB provider). `NodePort` opens a high port on every node. `Ingress` serves on its own hostname through the nginx ingress controller and needs a DNS record for `host`.
+    required: true
+    type: select
+    default: LoadBalancer
+    options:
+      - LoadBalancer
+      - NodePort
+      - Ingress
+  - name: loadbalancer_ip
+    description: Optional fixed IP to request for the LoadBalancer, i.e. `192.168.1.60`. Must be inside your load-balancer address pool. Ignored unless `service_type` is `LoadBalancer`.
+    required: false
+    default: ""
+  - name: host
+    description: Dedicated hostname for the UI, i.e. `homelable.example.com`. Only used when `service_type` is `Ingress`. The prebuilt images only serve from the root of a hostname, so this cannot be a path under your Genesis host.
+    required: false
+    default: ""
+  - name: admin_username
+    description: Username for the Homelable web UI login.
+    required: true
+    default: admin
+  - name: admin_password
+    description: Password for the Homelable web UI login. Hashed with bcrypt inside the container at start; never stored in plain text on disk.
+    required: true
+  - name: scanner_ranges
+    description: Comma-separated CIDR ranges the nmap scanner sweeps, i.e. `192.168.1.0/24,10.0.0.0/24`. Scans run from the pod network, so the ranges must be routable from the cluster nodes.
+    required: true
+    default: "192.168.1.0/24"
+  - name: status_checker_interval
+    description: Seconds between reachability checks of discovered hosts.
+    required: true
+    type: int
+    default: 60
+  - name: enable_mcp
+    description: Run the Homelable MCP server alongside the backend so AI clients (Claude Code, Claude Desktop) can read your infrastructure. Served on port 8001 at `/mcp`, protected by `mcp_api_key`.
+    required: true
+    type: boolean
+    default: false
+  - name: mcp_api_key
+    description: Bearer key AI clients present to the MCP server. Required when `enable_mcp` is on. Use a long random string.
+    required: false
+    default: ""
+  - name: expose_api_docs
+    description: Serve the interactive API docs (`/docs`, `/redoc`, `/openapi.json`). Upstream does not put these behind login, so they are hidden by default.
+    required: true
+    type: boolean
+    default: false
+  - name: image_tag
+    description: Homelable image tag pulled from `ghcr.io/pouzor`. Applies to the backend, frontend and MCP images together.
+    required: true
+    default: "3.6.0"
+  - name: storage_size
+    description: Size of the persistent volume holding the SQLite database and uploaded floor plans, i.e. `2Gi`.
+    required: true
+    default: "2Gi"
+  - name: storage_class
+    description: StorageClass for the data volume. Leave empty to use the cluster default StorageClass.
+    required: false
+    default: ""

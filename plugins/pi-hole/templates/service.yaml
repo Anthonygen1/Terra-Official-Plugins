@@ -24,24 +24,24 @@ metadata:
   namespace: {{ .Values.namespace }}
   labels:
     terra.juno-innovations.com/app: "{{ .Release.Name }}"
-  {{- if and (eq .Values.dns_service_type "LoadBalancer") (not .Values.k3s_servicelb) }}
   annotations:
-    # k3s's built-in ServiceLB (klipper) implements LoadBalancer Services by
-    # opening the port as a hostPort on every node. For port 53 that DNATs the
-    # node's own loopback resolver (systemd-resolved at 127.0.0.53) into the
-    # cluster, which breaks host DNS — including image pulls — until Pi-hole is
-    # up, and routes all node DNS through Pi-hole afterwards. Opt out unless the
-    # user explicitly asks for it; use MetalLB (or a cloud LB) instead.
-    svccontroller.k3s.cattle.io/enablelb: "false"
-  {{- end }}
+    # Created only after the Deployment (wave 0) is Healthy. k3s's built-in
+    # ServiceLB implements LoadBalancer Services as a hostPort on every node;
+    # for port 53 the CNI portmap rules DNAT the node's own loopback resolver
+    # (systemd-resolved, 127.0.0.53) into this Service. If that happens before
+    # the Pi-hole pod is Ready the node loses DNS and cannot even pull the
+    # Pi-hole image. Ordering the Service after the pod avoids the deadlock.
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   type: {{ .Values.dns_service_type }}
-  {{- if and (eq .Values.dns_service_type "LoadBalancer") .Values.loadbalancer_ip }}
+  {{- if eq .Values.dns_service_type "LoadBalancer" }}
+  {{- if .Values.loadbalancer_ip }}
   loadBalancerIP: {{ .Values.loadbalancer_ip | quote }}
   {{- end }}
-  {{- if eq .Values.dns_service_type "LoadBalancer" }}
-  # Keep the client source IP so the Pi-hole dashboard shows real client addresses.
-  externalTrafficPolicy: Local
+  # Local keeps the client source IP so the dashboard shows real client
+  # addresses, but only nodes running the pod are published. Cluster publishes
+  # every node and survives the pod moving, at the cost of client IPs.
+  externalTrafficPolicy: {{ .Values.external_traffic_policy }}
   {{- end }}
   ports:
     - name: dns-tcp
