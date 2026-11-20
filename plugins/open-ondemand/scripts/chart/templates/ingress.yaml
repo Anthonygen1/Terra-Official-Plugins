@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: "{{ .Values.name }}-open-ondemand"
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    # Always authenticated. Open OnDemand's own login is switched off inside the
+    # pod - whoever gets past this gate acts as the launching user, with a shell
+    # on the Slurm login node - so there is no option to disable it.
+    nginx.ingress.kubernetes.io/auth-url: "http://hubble.{{ .Release.Namespace }}.svc.cluster.local:3000/api/auth-workstation/{{ .Values.name }}/"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    # The shell and interactive apps hold websockets open for a whole session.
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    # File uploads through the Files app; matches Open OnDemand's own 10 GB cap.
+    nginx.ingress.kubernetes.io/proxy-body-size: "10g"
+spec:
+  rules:
+    - host: {{ .Values.host }}
+      http:
+        paths:
+          # Open OnDemand is configured to serve everything beneath this exact
+          # path (files/system.sh, via PREFIX). Change them together.
+          - path: "/{{ .Release.Namespace }}/ondemand/{{ .Values.name }}/"
+            pathType: Prefix
+            backend:
+              service:
+                name: "{{ .Values.name }}-open-ondemand"
+                port:
+                  number: 8080

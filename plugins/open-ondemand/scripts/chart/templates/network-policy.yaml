@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: "{{ .Values.name }}-open-ondemand"
+  labels:
+    kuiper.juno-innovations.com/kuiper-instance: "{{ .Values.name }}"
+spec:
+  podSelector:
+    matchLabels:
+      kuiper.juno-innovations.com/kuiper-instance: "{{ .Values.name }}"
+  # Ingress only. The portal trusts that every request has already passed Hubble
+  # authentication at the ingress, so nothing else may reach it - another pod
+  # connecting directly would be treated as the launching user.
+  #
+  # Egress is deliberately left open: the pod installs Open OnDemand from the
+  # internet at start, SSHes to the Slurm login node, and proxies interactive
+  # apps to compute-node pods on ports chosen at job time.
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.ingressNamespace }}
+      ports:
+        - protocol: TCP
+          port: 8080

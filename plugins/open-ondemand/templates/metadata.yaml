@@ -1,0 +1,63 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ .Release.Name }}-terra-metadata"
+  labels:
+    kuiper.juno-innovations.com/chart: "{{ .Release.Name }}-scripts-configmap"
+  annotations:
+    juno-innovations.com/workload: "Application"
+data:
+  chart: "{{ .Release.Name }}-scripts-configmap"
+  description: "Open OnDemand web portal onto a Slinky Slurm cluster"
+  fields: |
+    - name: icon
+      default: "https://raw.githubusercontent.com/juno-fx/Terra-Official-Plugins/refs/heads/main/plugins/open-ondemand/assets/logo.png"
+    - name: slurmNamespace
+      description: "Namespace the Slurm cluster runs in. Only change this if you run more than one Slurm cluster; the login node's name is fixed, so the namespace is all that distinguishes them."
+      type: string
+      required: true
+      default: "slurm"
+    - name: registry
+      description: "Registry to pull the base image from"
+      type: string
+      required: true
+      default: "docker.io"
+    - name: repo
+      description: "Repository of the base image. The default is a stock Rocky Linux image; Open OnDemand is installed into it at start. Point this at an image with Open OnDemand already installed to skip the install."
+      type: string
+      required: true
+      default: "rockylinux/rockylinux"
+    - name: tag
+      description: "Tag of the base image"
+      type: string
+      required: true
+      default: "9"
+    - name: oodVersion
+      description: "Open OnDemand release to install at start (major.minor, from yum.osc.edu). Ignored when the image already contains Open OnDemand."
+      type: string
+      required: true
+      default: "4.2"
+    - name: jupyterApp
+      description: "Offer the bundled Jupyter interactive app. It runs JupyterLab as a Slurm job, installing it into the user's home on first launch if the compute nodes do not already have it."
+      type: boolean
+      required: true
+      default: true
+    - name: desktopApp
+      description: "Offer Open OnDemand's remote desktop interactive app. Only enable this if your Slurm compute image has TurboVNC, websockify and an Xfce desktop installed - the stock Slinky image does not."
+      type: boolean
+      required: true
+      default: false
+    - name: ingressNamespace
+      description: "Namespace of the ingress controller. The portal accepts connections from this namespace only."
+      type: string
+      required: true
+      default: "ingress-nginx"
+  env_hints: |
+    - name: OOD_DASHBOARD_TITLE
+      description: Title shown in the portal's navigation bar and browser tab. Defaults to "Open OnDemand".
+    - name: OOD_CLUSTER_TITLE
+      description: Display name of the Slurm cluster inside the portal. Defaults to "Slurm".
+    - name: PACKAGES
+      description: Space-separated list of extra RPM packages to install into the portal pod at start, e.g. "git vim".
+    - name: OOD_SHELL_ORIGIN_CHECK
+      description: Origin the shell app accepts websocket connections from. Defaults to https://<platform host>; set to http://<platform host> if the platform is served without TLS.

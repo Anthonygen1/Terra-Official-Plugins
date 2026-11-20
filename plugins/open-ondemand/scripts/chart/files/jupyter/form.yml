@@ -1,0 +1,35 @@
+---
+cluster: "slurm"
+attributes:
+  bc_num_hours:
+    value: 1
+  bc_queue:
+    label: "Partition"
+    help: "Leave blank to use the cluster's default partition."
+  cores:
+    widget: "number_field"
+    label: "CPU cores"
+    value: 1
+    min: 1
+    max: 256
+    step: 1
+  memory_gb:
+    widget: "number_field"
+    label: "Memory (GB)"
+    help: "Leave blank to use the cluster's default memory per job."
+    min: 1
+    step: 1
+  setup_commands:
+    widget: "text_area"
+    label: "Setup commands"
+    help: |
+      Optional shell commands run on the compute node before Jupyter starts,
+      e.g. `module load python` or `source ~/my-env/bin/activate`. If no
+      `jupyter` command is on the PATH afterwards, JupyterLab is installed
+      once into `~/ondemand/jupyter-venv` using the node's `python3`.
+form:
+  - bc_num_hours
+  - bc_queue
+  - cores
+  - memory_gb
+  - setup_commands

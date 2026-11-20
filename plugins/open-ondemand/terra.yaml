@@ -1,0 +1,17 @@
+resource_id: open-ondemand
+name: Open OnDemand
+icon: https://raw.githubusercontent.com/juno-fx/Terra-Official-Plugins/refs/heads/main/plugins/open-ondemand/assets/logo.png
+description: |
+  Web portal onto a Slinky Slurm cluster. Each user launches their own Open OnDemand from Hubble to
+  browse files, compose and monitor jobs, open a shell and start interactive apps such as Jupyter.
+  Requires the Slinky plugin.
+category: Compute
+tags:
+  - slurm
+  - hpc
+  - portal
+  - batch
+  - jupyter
+  - cluster-level
+  - workload
+fields: []

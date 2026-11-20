@@ -1,0 +1,10 @@
+# Sourced after Jupyter is started in the background. The first launch may be
+# installing JupyterLab, so wait generously before giving up.
+echo "Waiting for Jupyter to open port ${port}..."
+if wait_until_port_used "${host}:${port}" 900; then
+  echo "Jupyter is listening on ${host}:${port}"
+else
+  echo "Timed out waiting for Jupyter to open port ${port}" >&2
+  clean_up 1
+fi
+sleep 2

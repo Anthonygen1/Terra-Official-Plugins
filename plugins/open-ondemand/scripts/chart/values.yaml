@@ -1,0 +1,31 @@
+# Kuiper-injected standard values — do not remove (selector: declared, not injected)
+name: open-ondemand
+user:
+group:
+cpu: "1"
+memory: "2Gi"
+cpuLimit: null
+memoryLimit: null
+idx: 0
+guid: 0
+puid: 0
+host:
+pullSecret:
+session:
+volumeMounts: []
+volumes: []
+env: []
+selector:
+plugins: []
+_kuiper:
+
+# User-facing fields from templates/metadata.yaml
+icon: "https://raw.githubusercontent.com/juno-fx/Terra-Official-Plugins/refs/heads/main/plugins/open-ondemand/assets/logo.png"
+slurmNamespace: slurm
+registry: docker.io
+repo: rockylinux/rockylinux
+tag: "9"
+oodVersion: "4.2"
+jupyterApp: true
+desktopApp: false
+ingressNamespace: ingress-nginx

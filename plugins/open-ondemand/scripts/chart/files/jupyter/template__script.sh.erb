@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+cd "${HOME}"
+
+<%- unless context.setup_commands.blank? -%>
+# --- setup commands from the launch form ---
+<%= context.setup_commands.gsub("\r\n", "\n") %>
+# -------------------------------------------
+<%- end -%>
+
+if ! command -v jupyter >/dev/null 2>&1; then
+  VENV="${HOME}/ondemand/jupyter-venv"
+  if [ ! -x "${VENV}/bin/jupyter" ]; then
+    if ! command -v python3 >/dev/null 2>&1; then
+      echo "No jupyter and no python3 on this compute node - nothing to start." >&2
+      echo "Install JupyterLab on the compute image, or activate an environment in 'Setup commands'." >&2
+      exit 1
+    fi
+    echo "Installing JupyterLab into ${VENV} (first launch only)..."
+    python3 -m venv "${VENV}" && "${VENV}/bin/pip" install --quiet jupyterlab || exit 1
+  fi
+  # shellcheck disable=SC1091
+  source "${VENV}/bin/activate"
+fi
+
+set -x
+jupyter lab --config="${JUPYTER_CONFIG_FILE}"

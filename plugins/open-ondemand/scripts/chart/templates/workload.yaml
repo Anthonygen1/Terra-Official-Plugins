@@ -1,0 +1,161 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: "{{ .Values.name }}"
+  labels:
+    kuiper.juno-innovations.com/kuiper-instance: "{{ .Values.name }}"
+  annotations:
+    juno-innovations.com/workload: "Application"
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      kuiper.juno-innovations.com/kuiper-instance: "{{ .Values.name }}"
+
+  template:
+    metadata:
+      labels:
+        kuiper.juno-innovations.com/kuiper-instance: "{{ .Values.name }}"
+      annotations:
+        juno-innovations.com/workload: "Application"
+
+    spec:
+      # The portal talks to Slurm over SSH and never to the Kubernetes API.
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      hostname: "{{ .Values.name }}"
+      # Give Apache and the per-user nginx time to close connections cleanly.
+      terminationGracePeriodSeconds: 30
+
+      {{- if .Values.selector }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  {{- range .Values.selector }}
+                  - key: {{ .key | quote }}
+                    operator: In
+                    values:
+                      - {{ .value | quote }}
+                  {{- end }}
+      {{- end }}
+      {{- if .Values.pullSecret }}
+      imagePullSecrets:
+        - name: "{{ .Values.pullSecret }}"
+      {{- end }}
+      containers:
+        - name: open-ondemand
+          image: "{{ .Values.registry }}/{{ .Values.repo }}:{{ .Values.tag }}"
+          imagePullPolicy: IfNotPresent
+          # Runs as root on purpose. Open OnDemand's Apache front end starts a
+          # per-user nginx as the launching user through sudo, which needs a
+          # setuid transition, and the default image installs packages at start.
+          # Every app the user touches runs as their own uid, not as root.
+          securityContext:
+            allowPrivilegeEscalation: true
+            capabilities:
+              drop: ["ALL"]
+              add:
+                - CHOWN
+                - DAC_OVERRIDE
+                - FOWNER
+                - FSETID
+                - SETUID
+                - SETGID
+                - SETFCAP
+                - KILL
+                - AUDIT_WRITE
+          command:
+            - /bin/bash
+          args:
+            - /system.sh
+          ports:
+            - containerPort: 8080
+              name: http
+          # /public is served straight from disk by Apache, with no user mapping
+          # and no per-user nginx behind it, so it answers as soon as Apache is up.
+          # The start-up budget is 20 minutes: the default image downloads and
+          # installs Open OnDemand before Apache starts.
+          startupProbe:
+            httpGet:
+              path: "/{{ .Release.Namespace }}/ondemand/{{ .Values.name }}/public/favicon.ico"
+              port: 8080
+            periodSeconds: 10
+            failureThreshold: 120
+          livenessProbe:
+            httpGet:
+              path: "/{{ .Release.Namespace }}/ondemand/{{ .Values.name }}/public/favicon.ico"
+              port: 8080
+            periodSeconds: 20
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: "{{ .Values.cpu }}"
+              memory: "{{ .Values.memory }}"
+            {{- if or .Values.cpuLimit .Values.memoryLimit }}
+            limits:
+              {{- if .Values.cpuLimit }}
+              cpu: "{{ .Values.cpuLimit }}"
+              {{- end }}
+              {{- if .Values.memoryLimit }}
+              memory: "{{ .Values.memoryLimit }}"
+              {{- end }}
+            {{- end }}
+          env:
+            # The launching user. system.sh creates this account and runs the
+            # portal's apps as it; uid/gid must match the Slurm login node's.
+            - name: USER
+              value: "{{ .Values.user }}"
+            - name: GROUP
+              value: "{{ .Values.group }}"
+            - name: PUID
+              value: "{{ .Values.puid }}"
+            - name: PGID
+              value: "{{ .Values.guid }}"
+            # Must equal the ingress path exactly - nothing rewrites it.
+            - name: PREFIX
+              value: "/{{ .Release.Namespace }}/ondemand/{{ .Values.name }}/"
+            - name: OOD_HOST
+              value: "{{ .Values.host }}"
+            - name: OOD_VERSION
+              value: "{{ .Values.oodVersion }}"
+            - name: OOD_JUPYTER_APP
+              value: "{{ .Values.jupyterApp }}"
+            - name: OOD_DESKTOP_APP
+              value: "{{ .Values.desktopApp }}"
+            # Fixed by the Slinky plugin, which pins fullnameOverride=slurm so the
+            # login node's name never depends on the Terra release name.
+            - name: SLURM_LOGIN_HOST
+              value: "slurm-login-slinky.{{ .Values.slurmNamespace }}.svc.cluster.local"
+            - name: SLURM_LOGIN_PORT
+              value: "22"
+            {{- range .Values.env }}
+            - name: {{ .name | quote }}
+              value: {{ .value | quote }}
+            {{- end }}
+          volumeMounts:
+            - name: tooling
+              mountPath: /system.sh
+              subPath: system.sh
+              readOnly: true
+            - name: jupyter-app
+              mountPath: /opt/juno/apps/jupyter
+              readOnly: true
+            {{- if .Values.volumeMounts }}
+            {{- toYaml .Values.volumeMounts | nindent 12 }}
+            {{- end }}
+      volumes:
+        - name: tooling
+          configMap:
+            name: "{{ .Values.name }}-open-ondemand-tooling"
+            defaultMode: 0555
+        - name: jupyter-app
+          configMap:
+            name: "{{ .Values.name }}-open-ondemand-jupyter"
+        {{- if .Values.volumes }}
+        {{- toYaml .Values.volumes | nindent 8 }}
+        {{- end }}

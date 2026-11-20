@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ .Values.name }}-open-ondemand-tooling"
+data:
+  system.sh: |
+{{ .Files.Get "files/system.sh" | indent 4 }}
+---
+# The bundled Jupyter interactive app. ConfigMap keys cannot contain "/", so
+# files under the app's template/ directory are stored as template__<name> and
+# put back in place by system.sh.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ .Values.name }}-open-ondemand-jupyter"
+data:
+{{- range $path, $_ := .Files.Glob "files/jupyter/*" }}
+  {{ base $path }}: |
+{{ $.Files.Get $path | indent 4 }}
+{{- end }}

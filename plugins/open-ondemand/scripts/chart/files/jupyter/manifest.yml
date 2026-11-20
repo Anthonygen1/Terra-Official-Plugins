@@ -1,0 +1,9 @@
+---
+name: Jupyter
+category: Interactive Apps
+subcategory: Servers
+role: batch_connect
+icon: fas://book
+description: |
+  Launches JupyterLab as a Slurm job on a compute node and connects your
+  browser to it through this portal.

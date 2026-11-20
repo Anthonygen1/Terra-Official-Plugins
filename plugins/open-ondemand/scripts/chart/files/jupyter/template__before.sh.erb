@@ -1,0 +1,22 @@
+# Sourced by the job script on the compute node before Jupyter starts.
+# find_port and create_passwd are provided by Open OnDemand's job wrapper.
+port=$(find_port "${host}")
+password="$(create_passwd 32)"
+
+export JUPYTER_CONFIG_FILE="${PWD}/config.py"
+(
+umask 077
+cat > "${JUPYTER_CONFIG_FILE}" << EOL
+c.ServerApp.ip = '0.0.0.0'
+c.ServerApp.port = ${port}
+c.ServerApp.port_retries = 0
+c.ServerApp.token = '${password}'
+c.ServerApp.password = ''
+# The portal proxies /node/<host>/<port>/ to this server without rewriting the
+# path, so Jupyter has to serve from the same URL the browser asks for.
+c.ServerApp.base_url = '<%= ENV["JUNO_OOD_PREFIX"] %>/node/${host}/${port}/'
+c.ServerApp.open_browser = False
+c.ServerApp.allow_origin = '*'
+c.ServerApp.root_dir = '${HOME}'
+EOL
+)
