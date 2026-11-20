@@ -27,6 +27,9 @@ log() { echo "[open-ondemand] $*"; }
 # as an install root and would write its files beneath it.
 OOD_PREFIX="${PREFIX%/}"
 unset PREFIX
+# Scheme users reach the platform with. TLS ends in front of this pod, so it
+# cannot be detected from the request.
+OOD_SCHEME="${OOD_SCHEME:-https}"
 HOME_DIR="/home/${USER}"
 OOD_VERSION="${OOD_VERSION:-4.2}"
 SLURM_LOGIN_PORT="${SLURM_LOGIN_PORT:-22}"
@@ -153,14 +156,12 @@ host_regex: '[\w.-]+'
 
 custom_vhost_directives:
   - 'SetEnvIf Request_URI ".*" JUNO_OOD_USER=${USER}'
-  # Apache's own redirects are absolute and would use http, because TLS ends at
-  # the ingress. Build them from the scheme the ingress reports instead.
+  # Apache's own redirects are absolute and would use http, because TLS ends in
+  # front of this pod - a redirect to http from an https page is blocked by the
+  # browser as mixed content. Rewrite internally instead of redirecting.
   - 'RewriteEngine On'
-  - 'RewriteCond %{HTTP:X-Forwarded-Proto} ^(https?)\$'
-  - 'RewriteRule "^${OOD_PREFIX}/?\$" "%1://%{HTTP_HOST}${OOD_PREFIX}/pun/sys/dashboard" [R=302,L]'
-  - 'RewriteRule "^${OOD_PREFIX}/?\$" "${OOD_PREFIX}/pun/sys/dashboard" [R=302,L]'
-  - 'RewriteCond %{HTTP:X-Forwarded-Proto} ^(https?)\$'
-  - 'RewriteRule "^${OOD_PREFIX}/logout\$" "%1://%{HTTP_HOST}${OOD_PREFIX}/pun/sys/dashboard/logout" [R=302,L]'
+  - 'RewriteRule "^${OOD_PREFIX}/?\$" "${OOD_PREFIX}/pun/sys/dashboard" [PT,L]'
+  - 'RewriteRule "^${OOD_PREFIX}/logout\$" "${OOD_PREFIX}/pun/sys/dashboard/logout" [PT,L]'
   # Redirects coming back from the apps are made relative for the same reason.
   - 'Header always edit Location "^https?://[^/]+" ""'
   - 'Header edit Location "^https?://[^/]+" ""'
@@ -232,13 +233,20 @@ v2:
       set_host: "host=\$(hostname -i | awk '{print \$1}')"
 EOF
 
+# Apache here only ever sees plain http, so Open OnDemand tells its apps the
+# request was http. They then reject every form submission, because the
+# browser's Origin (https://...) does not match. Report the scheme the user
+# really uses instead.
+sed -i "s#r.headers_in\\[.X-Forwarded-Proto.\\] = .*#r.headers_in[\"X-Forwarded-Proto\"] = \"${OOD_SCHEME}\"#" \
+  /opt/ood/mod_ood_proxy/lib/ood/proxy.lua
+
 # ---------------------------------------------------------------------------
 # 7. Apps
 # ---------------------------------------------------------------------------
 mkdir -p /etc/ood/config/apps/shell
 cat > /etc/ood/config/apps/shell/env <<EOF
 OOD_SSHHOST_ALLOWLIST="${SLURM_LOGIN_HOST}"
-OOD_SHELL_ORIGIN_CHECK="${OOD_SHELL_ORIGIN_CHECK:-https://${OOD_HOST}}"
+OOD_SHELL_ORIGIN_CHECK="${OOD_SHELL_ORIGIN_CHECK:-${OOD_SCHEME}://${OOD_HOST}}"
 EOF
 
 # Bundled Jupyter interactive app.

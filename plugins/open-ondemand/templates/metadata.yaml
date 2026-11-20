@@ -59,5 +59,5 @@ data:
       description: Display name of the Slurm cluster inside the portal. Defaults to "Slurm".
     - name: PACKAGES
       description: Space-separated list of extra RPM packages to install into the portal pod at start, e.g. "git vim".
-    - name: OOD_SHELL_ORIGIN_CHECK
-      description: Origin the shell app accepts websocket connections from. Defaults to https://<platform host>; set to http://<platform host> if the platform is served without TLS.
+    - name: OOD_SCHEME
+      description: Scheme users reach the platform with. Defaults to "https"; set to "http" only if the platform is served without TLS, otherwise forms and the shell are rejected.

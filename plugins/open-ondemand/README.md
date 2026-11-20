@@ -130,7 +130,7 @@ Open OnDemand:
 | `OOD_DASHBOARD_TITLE` | Title shown in the portal's navigation bar and browser tab. Defaults to "Open OnDemand" |
 | `OOD_CLUSTER_TITLE` | Display name of the Slurm cluster inside the portal. Defaults to "Slurm" |
 | `PACKAGES` | Space-separated list of extra RPM packages to install into the portal pod at start, e.g. `git vim` |
-| `OOD_SHELL_ORIGIN_CHECK` | Origin the shell app accepts websocket connections from. Defaults to `https://<platform host>`; set to `http://<platform host>` if the platform is served without TLS |
+| `OOD_SCHEME` | Scheme users reach the platform with. Defaults to `https`; set to `http` only if the platform is served without TLS, otherwise forms and the shell are rejected |
 
 ---
 
